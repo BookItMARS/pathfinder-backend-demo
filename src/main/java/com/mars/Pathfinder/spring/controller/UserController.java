@@ -14,47 +14,73 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mars.Pathfinder.spring.dynamodb.aws.entity.User;
 import com.mars.Pathfinder.spring.dynamodb.aws.repository.UserRepository;
 
+/**
+ * @author tjspitz
+ */
 @RestController
 public class UserController {
 
-  @Autowired
-  public UserRepository userRepo;
+    /**
+     * @see com.mars.Pathfinder.spring.dynamodb.aws.repository.UserRepository
+     */
+    @Autowired
+    public UserRepository userRepo;
 
-  @PostMapping("/save") // [X]
-  public User saveUser(@RequestBody User user) {
+    /**
+     * @param user
+     * @return User
+     */
+    @PostMapping("/save") // [X]
+    public User saveUser(@RequestBody User user) {
+        String tempPassword = new BCryptPasswordEncoder().encode(makeFirstPassword());
+        user.setPassword(tempPassword);
 
-      String tempPassword = new BCryptPasswordEncoder().encode(makeFirstPassword());
-    user.setPassword(tempPassword);
+//      don't want to send the encrypted password back to the frontend
+//      return userRepo.addUser(user);
 
-//    don't want to send the encrypted password back to the frontend
-//    return userRepo.addUser(user);
+        User sanitizedUser = userRepo.addUser(user);
+        sanitizedUser.setPassword("encrypted for your protection");
+        return sanitizedUser;
+    }
 
-    User sanitizedUser = userRepo.addUser(user);
-    sanitizedUser.setPassword("encrypted for your protection");
-    return sanitizedUser;
-  }
+    /**
+     * @param userEmailId
+     * @return User
+     */
+    @GetMapping("/get/{userEmailId}") // [X]
+    public User findUser(@PathVariable String userEmailId) {
+        return userRepo.findUserByEmailId(userEmailId);
+    }
 
-  @GetMapping("/get/{userEmailId}") // [X]
-  public User findUser(@PathVariable String userEmailId) {
-    return userRepo.findUserByEmailId(userEmailId);
-  }
+    /**
+     * @param user
+     * @return String
+     */
+    @DeleteMapping("/delete") // [X]
+    public String deleteUser(@RequestBody User user) {
+        // TODO: refactor so we don't need to pass the entire user object
+        return userRepo.deleteUser(user);
+    }
 
-  @DeleteMapping("/delete") // [X]
-  public String deleteUser(@RequestBody User user) {
-    // TODO: refactor so we don't need to pass the entire user object
-      return userRepo.deleteUser(user);
-  }
+    /**
+     * @param user
+     * @return String
+     */
+    @PutMapping("/edit") //
+    public String updateUser(@RequestBody User user) {
+        // fetch the user
+        // verify that the plain password matches the encrypted password
+        // now we can save the changes (including new, encrypted password)
+        return userRepo.editUser(user);
+    }
 
-  @PutMapping("/edit") //
-  public String updateUser(@RequestBody User user) {
-      // fetch the user
-      // verify that the plain password matches the encrypted password
-      // now we can save the changes (including new, encrypted password)
-    return userRepo.editUser(user);
-  }
-
-  private String makeFirstPassword() {
-      String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?";
-        return RandomStringUtils.random( 8, characters );
-  }
+    /**
+     * @author Saibhavithra
+     * @description generates a temporary but strong password for new usersß
+     * @return String
+     */
+    private String makeFirstPassword() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?";
+        return RandomStringUtils.random(8, characters);
+    }
 }
