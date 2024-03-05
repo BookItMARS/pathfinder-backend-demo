@@ -1,6 +1,8 @@
 package com.mars.Pathfinder.spring.controller;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,28 +17,44 @@ import com.mars.Pathfinder.spring.dynamodb.aws.repository.UserRepository;
 @RestController
 public class UserController {
 
-	@Autowired
-	public UserRepository userRepo;
+  @Autowired
+  public UserRepository userRepo;
 
-	@PostMapping("/save")
-	public User saveUser(@RequestBody User user) {
-		// get the password
-		// use BcryptPasswordEncoder to encode password before storing
-		return userRepo.addUser(user);
-	}
+  @PostMapping("/save") // [X]
+  public User saveUser(@RequestBody User user) {
 
-	@GetMapping("/get/{userEmailId}")
-	public User findUser(@PathVariable String userEmailId) {
-		return userRepo.findUserByEmailId(userEmailId);
-	}
+      String tempPassword = new BCryptPasswordEncoder().encode(makeFirstPassword());
+    user.setPassword(tempPassword);
 
-	@DeleteMapping("/delete")
-	public String deleteUser(@RequestBody User user) {
-		return userRepo.deleteUser(user);
-	}
+//    don't want to send the encrypted password back to the frontend
+//    return userRepo.addUser(user);
 
-	@PutMapping("/edit")
-	public String updateUser(@RequestBody User user) {
-		return userRepo.editUser(user);
-	}
+    User sanitizedUser = userRepo.addUser(user);
+    sanitizedUser.setPassword("encrypted for your protection");
+    return sanitizedUser;
+  }
+
+  @GetMapping("/get/{userEmailId}") // [X]
+  public User findUser(@PathVariable String userEmailId) {
+    return userRepo.findUserByEmailId(userEmailId);
+  }
+
+  @DeleteMapping("/delete") // [X]
+  public String deleteUser(@RequestBody User user) {
+    // TODO: refactor so we don't need to pass the entire user object
+      return userRepo.deleteUser(user);
+  }
+
+  @PutMapping("/edit") //
+  public String updateUser(@RequestBody User user) {
+      // fetch the user
+      // verify that the plain password matches the encrypted password
+      // now we can save the changes (including new, encrypted password)
+    return userRepo.editUser(user);
+  }
+
+  private String makeFirstPassword() {
+      String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?";
+        return RandomStringUtils.random( 8, characters );
+  }
 }

@@ -17,38 +17,38 @@ import com.mars.Pathfinder.spring.dynamodb.aws.entity.User;
 @Repository
 public class UserRepository {
 
-	@Autowired
-	private DynamoDBMapper mapper;
+  @Autowired
+  private DynamoDBMapper mapper;
 
-	public User addUser(User user) {
-		mapper.save(user);
-		return user;
-	}
+  public User addUser(User user) {
+    mapper.save(user);
+    return user;
+  }
 
-	public User findUserByEmailId(String userEmailId) {
-		return mapper.load(User.class, userEmailId);
-	}
+  public User findUserByEmailId(String userEmailId) {
+    return mapper.load(User.class, userEmailId, "user");
+  }
 
-	public String deleteUser(User user) {
-		mapper.delete(user);
-		return "User Deleted";
-	}
+  public String deleteUser(User user) {
+    mapper.delete(user);
+    return "User Deleted";
+  }
 
-	public String editUser(User user) {
-		// mapper.save(user);
-		mapper.save(user, buildExpression(user));
-		return "User Updated";
-	}
+  public String editUser(User user) {
+    // mapper.save(user);
+    mapper.save(user, buildExpression(user));
+    return "User Updated";
+  }
 
-	public List<User> getAllUsers() {
-		return mapper.scan(User.class, new DynamoDBScanExpression());
-	}
+  public List<User> getAllUsers() {
+    return mapper.scan(User.class, new DynamoDBScanExpression());
+  }
 
-	private DynamoDBSaveExpression buildExpression(User user) {
-		DynamoDBSaveExpression dynamoDBSaveExpression = new DynamoDBSaveExpression();
-		Map<String, ExpectedAttributeValue> expectedMap = new HashMap<>();
-		expectedMap.put("emailId", new ExpectedAttributeValue(new AttributeValue().withS(user.getEmailId())));
-		dynamoDBSaveExpression.setExpected(expectedMap);
-		return dynamoDBSaveExpression;
-	}
+  private DynamoDBSaveExpression buildExpression(User user) {
+    DynamoDBSaveExpression dynamoDBSaveExpression = new DynamoDBSaveExpression();
+    Map<String, ExpectedAttributeValue> expectedMap = new HashMap<>();
+    expectedMap.put("emailId", new ExpectedAttributeValue(new AttributeValue().withS(user.getEmailId())));
+    dynamoDBSaveExpression.setExpected(expectedMap);
+    return dynamoDBSaveExpression;
+  }
 }
