@@ -1,5 +1,7 @@
 package com.mars.Pathfinder.spring.controller;
 
+import java.util.Random;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -76,11 +78,47 @@ public class UserController {
 
     /**
      * @author Saibhavithra
-     * @description generates a temporary but strong password for new usersß
+     * @description generates a temporary but strong password for new users
      * @return String
      */
     private String makeFirstPassword() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?";
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*?";
         return RandomStringUtils.random(8, characters);
+    }
+
+    /**
+     * @author tjspitz
+     * @description generates a password with randomized set of characters;
+     * includes at least 1 char from each group (A-Z), (a-z), (0-9), (~!@#$%^&*)
+     * @return String
+     */
+    private String makeFirstPasswordV2() {
+        String password = "";
+        Random random = new Random();
+        String uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowercase = uppercase.toLowerCase();
+        String nums = "1234567890";
+        String specials = "~!@#$%^&*";
+
+        int i;
+        int upperLength = uppercase.length();
+        int lowerLength = lowercase.length();
+        int numsLength = nums.length();
+        int specialsLength = specials.length();
+
+        while (password.length() < 8) {
+            i = random.nextInt(upperLength);
+            password += uppercase.charAt(i);
+
+            i = random.nextInt(lowerLength);
+            password += lowercase.charAt(i);
+
+            i = random.nextInt(numsLength);
+            password += nums.charAt(i);
+
+            i = random.nextInt(specialsLength);
+            password += specials.charAt(i);
+        }
+        return password;
     }
 }
