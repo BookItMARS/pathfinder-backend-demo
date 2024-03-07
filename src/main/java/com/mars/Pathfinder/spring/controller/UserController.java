@@ -35,14 +35,17 @@ public class UserController {
      */
     @PostMapping("/save") // [X]
     public User saveUser(@RequestBody User user) {
+        // does the user already exist?
+            // give an error code (status code 4xx)
+
         String tempPassword = generatePassayPassword();
         user.setPassword(new BCryptPasswordEncoder().encode(tempPassword));
-        
+
         // the encoded password
         System.out.println(user.getPassword());
-        
+
         User sanitizedUser = userRepo.addUser(user);
-        
+
 //      don't want to send the encrypted password back to the frontend
         sanitizedUser.setPassword("encrypted for your protection");
         return sanitizedUser;
@@ -76,13 +79,16 @@ public class UserController {
         // might have to fetch user from the DB to get the encoded password
             // yes => leave password alone
             // no => encode this password and then save the user
+
+        // addtil db col for temp password(?)
+
         return userRepo.editUser(user);
     }
 
     /**
      * @return String
      */
-    public String generatePassayPassword() {
+    private String generatePassayPassword() {
         PasswordGenerator gen = new PasswordGenerator();
 
         CharacterData lowerCaseChars = EnglishCharacterData.LowerCase;
@@ -100,9 +106,7 @@ public class UserController {
         CharacterData specialChars = new CharacterData() {
             public String getErrorCode() {
                 return "ERROR_CODE";
-
             }
-
             public String getCharacters() {
                 return "@#$%&*";
             }
