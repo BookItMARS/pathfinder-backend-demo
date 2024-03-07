@@ -1,8 +1,9 @@
 package com.mars.Pathfinder.spring.controller;
 
-import java.util.Random;
-
-import org.apache.commons.lang3.RandomStringUtils;
+import org.passay.CharacterData;
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,13 +35,15 @@ public class UserController {
      */
     @PostMapping("/save") // [X]
     public User saveUser(@RequestBody User user) {
-        String tempPassword = new BCryptPasswordEncoder().encode(makeFirstPassword());
-        user.setPassword(tempPassword);
-
-//      don't want to send the encrypted password back to the frontend
-//      return userRepo.addUser(user);
-
+        String tempPassword = generatePassayPassword();
+        user.setPassword(new BCryptPasswordEncoder().encode(tempPassword));
+        
+        // the encoded password
+        System.out.println(user.getPassword());
+        
         User sanitizedUser = userRepo.addUser(user);
+        
+//      don't want to send the encrypted password back to the frontend
         sanitizedUser.setPassword("encrypted for your protection");
         return sanitizedUser;
     }
@@ -60,7 +63,6 @@ public class UserController {
      */
     @DeleteMapping("/delete") // [X]
     public String deleteUser(@RequestBody User user) {
-        // TODO: refactor so we don't need to pass the entire user object
         return userRepo.deleteUser(user);
     }
 
@@ -68,57 +70,46 @@ public class UserController {
      * @param user
      * @return String
      */
-    @PutMapping("/edit") //
+    @PutMapping("/edit") // [X]
     public String updateUser(@RequestBody User user) {
-        // fetch the user
-        // verify that the plain password matches the encrypted password
-        // now we can save the changes (including new, encrypted password)
+        // is the user.getPassword() matching what is in the db?
+        // might have to fetch user from the DB to get the encoded password
+            // yes => leave password alone
+            // no => encode this password and then save the user
         return userRepo.editUser(user);
     }
 
     /**
-     * @author Saibhavithra
-     * @description generates a temporary but strong password for new users
      * @return String
      */
-    private String makeFirstPassword() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*?";
-        return RandomStringUtils.random(8, characters);
-    }
+    public String generatePassayPassword() {
+        PasswordGenerator gen = new PasswordGenerator();
 
-    /**
-     * @author tjspitz
-     * @description generates a password with randomized set of characters;
-     * includes at least 1 char from each group (A-Z), (a-z), (0-9), (~!@#$%^&*)
-     * @return String
-     */
-    private String makeFirstPasswordV2() {
-        String password = "";
-        Random random = new Random();
-        String uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String lowercase = uppercase.toLowerCase();
-        String nums = "1234567890";
-        String specials = "~!@#$%^&*";
+        CharacterData lowerCaseChars = EnglishCharacterData.LowerCase;
+        CharacterRule lowerCaseRule = new CharacterRule(lowerCaseChars);
+        lowerCaseRule.setNumberOfCharacters(2);
 
-        int i;
-        int upperLength = uppercase.length();
-        int lowerLength = lowercase.length();
-        int numsLength = nums.length();
-        int specialsLength = specials.length();
+        CharacterData upperCaseChars = EnglishCharacterData.UpperCase;
+        CharacterRule upperCaseRule = new CharacterRule(upperCaseChars);
+        upperCaseRule.setNumberOfCharacters(2);
 
-        while (password.length() < 8) {
-            i = random.nextInt(upperLength);
-            password += uppercase.charAt(i);
+        CharacterData digitChars = EnglishCharacterData.Digit;
+        CharacterRule digitRule = new CharacterRule(digitChars);
+        digitRule.setNumberOfCharacters(2);
 
-            i = random.nextInt(lowerLength);
-            password += lowercase.charAt(i);
+        CharacterData specialChars = new CharacterData() {
+            public String getErrorCode() {
+                return "ERROR_CODE";
 
-            i = random.nextInt(numsLength);
-            password += nums.charAt(i);
+            }
 
-            i = random.nextInt(specialsLength);
-            password += specials.charAt(i);
-        }
-        return password;
+            public String getCharacters() {
+                return "@#$%&*";
+            }
+        };
+        CharacterRule splCharRule = new CharacterRule(specialChars);
+        splCharRule.setNumberOfCharacters(1);
+
+        return gen.generatePassword(10, splCharRule, lowerCaseRule, upperCaseRule, digitRule);
     }
 }

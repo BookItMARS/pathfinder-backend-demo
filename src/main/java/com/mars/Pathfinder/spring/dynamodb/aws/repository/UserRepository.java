@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDeleteExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
@@ -45,7 +46,7 @@ public class UserRepository {
      * @return String
      */
     public String deleteUser(User user) {
-        mapper.delete(user);
+        mapper.delete(user, buildDeleteExpression(user));
         return "User Deleted";
     }
 
@@ -54,8 +55,7 @@ public class UserRepository {
      * @return String
      */
     public String editUser(User user) {
-        mapper.save(user, buildExpression(user));
-
+        mapper.save(user, buildEditExpression(user));
         return "User Updated";
     }
 
@@ -66,7 +66,7 @@ public class UserRepository {
         return mapper.scan(User.class, new DynamoDBScanExpression());
     }
 
-    private DynamoDBSaveExpression buildExpression(User user) {
+    private DynamoDBSaveExpression buildEditExpression(User user) {
         DynamoDBSaveExpression dynamoDBSaveExpression = new DynamoDBSaveExpression();
         Map<String, ExpectedAttributeValue> expectedMap = new HashMap<>();
         expectedMap.put("ID",
@@ -75,5 +75,16 @@ public class UserRepository {
                 new ExpectedAttributeValue(new AttributeValue().withS(user.getDocType())));
         dynamoDBSaveExpression.setExpected(expectedMap);
         return dynamoDBSaveExpression;
+    }
+
+    private DynamoDBDeleteExpression buildDeleteExpression(User user) {
+        DynamoDBDeleteExpression dynamoDBDeleteExpression = new DynamoDBDeleteExpression();
+        Map<String, ExpectedAttributeValue> expectedMap = new HashMap<>();
+        expectedMap.put("ID",
+                new ExpectedAttributeValue(new AttributeValue().withS(user.getEmailId())));
+        expectedMap.put("DocType",
+                new ExpectedAttributeValue(new AttributeValue().withS(user.getDocType())));
+        dynamoDBDeleteExpression.setExpected(expectedMap);
+        return dynamoDBDeleteExpression;
     }
 }
